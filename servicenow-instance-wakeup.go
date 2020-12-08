@@ -31,7 +31,7 @@ func main() {
 	flag.StringVar(&userDetails.Password, "password", "", "write the password with which you are logging in to the developers account")
 	flag.BoolVar(&userDetails.ChromeHeadless, "headless", false, "bool, if we need headless mode with chrome or not, default:false")
 	flag.BoolVar(&userDetails.Debug, "debug", false, "bool, if you want debug output or not, default:false")
-	flag.StringVar(&configFile, "config", "", "Provide the config file name, it can be a relative path or a full path, e.g. /home/user/servicenow-config.json or just simply 'config.json'")
+	flag.StringVar(&configFile, "config", "config.json", "Provide the config file name, it can be a relative path or a full path, e.g. /home/user/servicenow-config.json or just simply 'config.json'")
 	flag.Int64Var(&seconds, "timeout", 60, "Set the timeout after which the app should exit. This is a number in seconds, default:60")
 	flag.Parse()
 
@@ -152,31 +152,20 @@ func wakeUpInstance(ctx context.Context, username string, password string, timeo
 
     fmt.Printf("Wait button\n")
 
-    if err := chromedp.Run(ctx, chromedp.WaitVisible(`document.querySelector("body > dps-app").shadowRoot.querySelector("div > header > dps-navigation-header").shadowRoot.querySelector("header > div > div.dps-navigation-header-utility > ul > li.dps-navigation-header-list-item > dps-login").shadowRoot.querySelector("div > button")`, chromedp.ByJSPath)); err != nil {
-        return fmt.Errorf("Button was not found: %v", err)
-    }
-
-    fmt.Printf("Button is it\n")
-
-	var res int
-
-    fmt.Printf("Click on the button\n")
-
-    chromedp.Run(ctx, chromedp.EvaluateAsDevTools(`document.querySelector("body > dps-app").shadowRoot.querySelector("div > header > dps-navigation-header").shadowRoot.querySelector("header > div > div.dps-navigation-header-utility > ul > li.dps-navigation-header-list-item > dps-login").shadowRoot.querySelector("div > button").click()`, &res))
-
-    fmt.Printf("Clicked successfully\n")
-
 	var finalRes int
 
 	fmt.Printf("Start find button for wakeup\n")
-
-	if err := chromedp.Run(ctx, chromedp.WaitVisible(`document.querySelector("body > dps-app").shadowRoot.querySelector("div > header > dps-navigation-header").shadowRoot.querySelector("header > dps-navigation-header-dropdown > dps-navigation-login-management").shadowRoot.querySelector("dps-navigation-header-dropdown-content > dps-navigation-section > dps-navigation-instance-management").shadowRoot.querySelector("div.dps-navigation-instance-management > div.dps-navigation-instance-management-content > dps-content-stack > dps-button").shadowRoot.querySelector("button")`, chromedp.ByJSPath)); err != nil {
-	    return fmt.Errorf("Button was not found: %v", err)
+	if err := chromedp.Run(ctx, chromedp.WaitVisible(`document.querySelector("dps-app").shadowRoot.querySelector("dps-home-auth").shadowRoot.querySelector("dps-instance-sidebar").shadowRoot.querySelector("dps-button")`, chromedp.ByJSPath)); err != nil {
+	    return fmt.Errorf("button was not found: %v", err)
 	}
 
     fmt.Printf("Start wakeup instance\n")
 
-    chromedp.Run(ctx, chromedp.EvaluateAsDevTools(`document.querySelector("body > dps-app").shadowRoot.querySelector("div > header > dps-navigation-header").shadowRoot.querySelector("header > dps-navigation-header-dropdown > dps-navigation-login-management").shadowRoot.querySelector("dps-navigation-header-dropdown-content > dps-navigation-section > dps-navigation-instance-management").shadowRoot.querySelector("div.dps-navigation-instance-management > div.dps-navigation-instance-management-content > dps-content-stack > dps-button").shadowRoot.querySelector("button").click()`, &finalRes))
+    if err := chromedp.Run(ctx, chromedp.Click(`document.querySelector("dps-app").shadowRoot.querySelector("dps-home-auth").shadowRoot.querySelector("dps-instance-sidebar").shadowRoot.querySelector("dps-button")`, chromedp.ByQuery)); err != nil {
+		return fmt.Errorf("button was not found: %v", err)
+	}
+
+	fmt.Printf("%v", finalRes)
 
 	fmt.Printf("Finished\n")
 
