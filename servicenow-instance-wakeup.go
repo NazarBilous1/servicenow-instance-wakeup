@@ -31,7 +31,7 @@ func main() {
 	flag.StringVar(&userDetails.Password, "password", "", "write the password with which you are logging in to the developers account")
 	flag.BoolVar(&userDetails.ChromeHeadless, "headless", false, "bool, if we need headless mode with chrome or not, default:false")
 	flag.BoolVar(&userDetails.Debug, "debug", false, "bool, if you want debug output or not, default:false")
-	flag.StringVar(&configFile, "config", "config.json", "Provide the config file name, it can be a relative path or a full path, e.g. /home/user/servicenow-config.json or just simply 'config.json'")
+	flag.StringVar(&configFile, "config", "", "Provide the config file name, it can be a relative path or a full path, e.g. /home/user/servicenow-config.json or just simply 'config.json'")
 	flag.Int64Var(&seconds, "timeout", 60, "Set the timeout after which the app should exit. This is a number in seconds, default:60")
 	flag.Parse()
 
