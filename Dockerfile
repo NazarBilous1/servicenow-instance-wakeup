@@ -12,7 +12,8 @@ RUN chmod a+x /app/servicenow-instance-wakeup
 RUN apt-get update && apt-get install -y \
     cron \
     golang \
-    git
+    git \
+    nano
 
 COPY servicenow /etc/cron.d/servicenow
 
@@ -21,5 +22,7 @@ RUN chmod 0744 /etc/cron.d/servicenow
 COPY . /app
 
 RUN crontab /etc/cron.d/servicenow
+
+RUN go get -u github.com/chromedp/chromedp
 
 CMD ["cron", "-f"]
