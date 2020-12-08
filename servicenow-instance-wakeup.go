@@ -74,6 +74,8 @@ func main() {
 	)
 	defer cancel()
 
+	fmt.Printf("%v", seconds)
+
 	timeout = time.Duration(seconds) * time.Second
 
 	err = wakeUpInstance(ctx, userDetails.Username, userDetails.Password, timeout)
@@ -161,11 +163,9 @@ func wakeUpInstance(ctx context.Context, username string, password string, timeo
 
     fmt.Printf("Start wakeup instance\n")
 
-    if err := chromedp.Run(ctx, chromedp.Click(`document.querySelector("dps-app").shadowRoot.querySelector("dps-home-auth").shadowRoot.querySelector("dps-instance-sidebar").shadowRoot.querySelector("dps-button")`, chromedp.ByQuery)); err != nil {
-		return fmt.Errorf("button was not found: %v", err)
+    if err := chromedp.Run(ctx, chromedp.EvaluateAsDevTools(`document.querySelector("dps-app").shadowRoot.querySelector("dps-home-auth").shadowRoot.querySelector("dps-instance-sidebar").shadowRoot.querySelector("dps-button").click() === undefined ? 1 : 0`, &finalRes)); err != nil {
+		return fmt.Errorf("button was not clicked: %v", err)
 	}
-
-	fmt.Printf("%v", finalRes)
 
 	fmt.Printf("Finished\n")
 
