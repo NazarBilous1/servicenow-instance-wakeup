@@ -1,5 +1,6 @@
 config.json
 build/
-servicenow-instance-wakeup
 .idea/
+vendor
+servicenow-instance-wakeup
 .env
