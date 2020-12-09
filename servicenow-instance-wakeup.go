@@ -31,6 +31,14 @@ const (
 		      "or password. e.g. program -username user@email.tld or setup a config.json with the details"
 )
 
+type User struct {
+	Username       string        `json:"username"`
+	Password       string        `json:"password"`
+	ChromeHeadless bool          `json:"headless"`
+	Debug          bool          `json:"debug"`
+	Timeout        time.Duration `json:"timeout"`
+}
+
 func main() {
 	u := &User{}
 
