@@ -1,1 +1,1 @@
-* * * * * bash /app/servicenow.sh >> /var/log/service_now_cron.log 2>&1
+0 * * * * bash /app/servicenow.sh

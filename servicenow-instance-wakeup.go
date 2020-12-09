@@ -84,6 +84,8 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	log.Printf("Finished")
 }
 
 func wakeUpInstance(ctx context.Context, username string, password string, timeout time.Duration) error {
