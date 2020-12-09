@@ -74,6 +74,8 @@ func main() {
 	)
 	defer cancel()
 
+	fmt.Printf("%v", seconds)
+
 	timeout = time.Duration(seconds) * time.Second
 
 	err = wakeUpInstance(ctx, userDetails.Username, userDetails.Password, timeout)
@@ -82,6 +84,8 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	log.Printf("Finished")
 }
 
 func wakeUpInstance(ctx context.Context, username string, password string, timeout time.Duration) error {
@@ -150,22 +154,22 @@ func wakeUpInstance(ctx context.Context, username string, password string, timeo
 		fmt.Printf("Login successful!\n")
 	}
 
-	fmt.Printf("Detecting the wakeup button element to determine if we are on the developer portal homepage...\n")
-	if err := chromedp.Run(ctx, chromedp.WaitVisible(`document.querySelector("body > dps-app").shadowRoot.querySelector("div > main > dps-home-auth").shadowRoot.querySelector("div > div > div.instance-widget > dps-instance-sidebar").shadowRoot.querySelector("div > div.dps-instance-sidebar-content.dps-instance-sidebar-content-instance-info > div.dps-instance-sidebar-content-btn-group > dps-button").shadowRoot.querySelector("button")`, chromedp.ByJSPath)); err != nil {
-		return fmt.Errorf("could not find shadow element (header status bar): %v", err)
-	} else {
-		fmt.Printf("Element found\n")
+    fmt.Printf("Wait button\n")
+
+	var finalRes int
+
+	fmt.Printf("Start find button for wakeup\n")
+	if err := chromedp.Run(ctx, chromedp.WaitVisible(`document.querySelector("dps-app").shadowRoot.querySelector("dps-home-auth").shadowRoot.querySelector("dps-instance-sidebar").shadowRoot.querySelector("dps-button")`, chromedp.ByJSPath)); err != nil {
+	    return fmt.Errorf("button was not found: %v", err)
 	}
 
-	fmt.Printf("Sleep for a %d seconds for the render of the nodes...\n", 5)
-	time.Sleep(5 * time.Second)
+    fmt.Printf("Start wakeup instance\n")
 
-	var res int
-	if err := chromedp.Run(ctx, chromedp.EvaluateAsDevTools(`(function(){document.querySelector("body > dps-app").shadowRoot.querySelector("div > main > dps-home-auth").shadowRoot.querySelector("div > div > div.instance-widget > dps-instance-sidebar").shadowRoot.querySelector("div > div.dps-instance-sidebar-content.dps-instance-sidebar-content-instance-info > div.dps-instance-sidebar-content-btn-group > dps-button").shadowRoot.querySelector("button").click();return 1;})()`, &res)); err != nil {
-		return fmt.Errorf("could not click on shadow element (button): %v", err)
-	} else {
-		fmt.Println("Clicked on the Wakeup instance button! Exiting...")
+    if err := chromedp.Run(ctx, chromedp.EvaluateAsDevTools(`document.querySelector("dps-app").shadowRoot.querySelector("dps-home-auth").shadowRoot.querySelector("dps-instance-sidebar").shadowRoot.querySelector("dps-button").click() === undefined ? 1 : 0`, &finalRes)); err != nil {
+		return fmt.Errorf("button was not clicked: %v", err)
 	}
+
+	fmt.Printf("Finished\n")
 
 	return nil
 }
