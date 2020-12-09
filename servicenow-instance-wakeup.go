@@ -12,25 +12,6 @@ import (
 	"time"
 )
 
-var (
-	err        error
-	configFile string
-	timeout    time.Duration
-	seconds    int64
-)
-
-const (
-	confUsername = "write the username/email with which you are logging in to the developers account"
-	confPassword = "write the password with which you are logging in to the developers account"
-	confHeadless = "bool, if we need headless mode with chrome or not, default:false"
-	confDebug = "bool, if you want debug output or not, default:false"
-	confFile = "Provide the config file name, it can be a relative path or a full path, e.g." +
-				" /home/user/servicenow-config.json or just simply 'config.json'"
-	confTimeout = "Set the timeout after which the app should exit. This is a number in seconds, default:60"
-	errConf = "No username or password provided. Use the -username and -password flags to set the username " +
-		      "or password. e.g. program -username user@email.tld or setup a config.json with the details"
-)
-
 type User struct {
 	Username       string        `json:"username"`
 	Password       string        `json:"password"`
@@ -40,25 +21,29 @@ type User struct {
 }
 
 func main() {
-	u := &User{}
+	var err error
+	var configFile string
+	var timeout time.Duration
+	var seconds int64
+	userDetails := &User{}
 
-	flag.StringVar(&u.Username, "username", "", confUsername)
-	flag.StringVar(&u.Password, "password", "", confPassword)
-	flag.BoolVar(&u.ChromeHeadless, "headless", false, confHeadless)
-	flag.BoolVar(&u.Debug, "debug", false, confDebug)
-	flag.StringVar(&configFile, "config", "", confFile)
-	flag.Int64Var(&seconds, "timeout", 60, confTimeout)
+	flag.StringVar(&userDetails.Username, "username", "", "write the username/email with which you are logging in to the developers account")
+	flag.StringVar(&userDetails.Password, "password", "", "write the password with which you are logging in to the developers account")
+	flag.BoolVar(&userDetails.ChromeHeadless, "headless", false, "bool, if we need headless mode with chrome or not, default:false")
+	flag.BoolVar(&userDetails.Debug, "debug", false, "bool, if you want debug output or not, default:false")
+	flag.StringVar(&configFile, "config", "", "Provide the config file name, it can be a relative path or a full path, e.g. /home/user/servicenow-config.json or just simply 'config.json'")
+	flag.Int64Var(&seconds, "timeout", 60, "Set the timeout after which the app should exit. This is a number in seconds, default:60")
 	flag.Parse()
 
 	// Read config into struct if exists
 	if configFile != "" {
 		log.Println("Your flags will be ignored and replaced by the values in the config file you specified...")
 		log.Printf("Loading config file under the path [%s]", configFile)
-		u = readConfig(configFile)
+		userDetails = readConfig(configFile)
 	}
 
-	if u == nil || len(u.Username) == 0 || len(u.Password) == 0 {
-		log.Println(errConf)
+	if userDetails == nil || len(userDetails.Username) == 0 || len(userDetails.Password) == 0 {
+		log.Println("No username or password provided. Use the -username and -password flags to set the username or password. e.g. program -username user@email.tld or setup a config.json with the details")
 		os.Exit(1)
 	}
 
@@ -68,14 +53,14 @@ func main() {
 		chromedp.DisableGPU,
 	}
 
-	log.Printf("Starting the app with debug=%t/headless=%t/account=%s", u.Debug, u.ChromeHeadless, u.Username)
+	log.Printf("Starting the app with debug=%t/headless=%t/account=%s", userDetails.Debug, userDetails.ChromeHeadless, userDetails.Username)
 
 	// navigate to a page, wait for an element, click
-	if !u.Debug {
+	if !userDetails.Debug {
 		log.SetOutput(ioutil.Discard)
 	}
 
-	if u.ChromeHeadless {
+	if userDetails.ChromeHeadless {
 		opts = append(opts, chromedp.Headless)
 	}
 
@@ -93,12 +78,14 @@ func main() {
 
 	timeout = time.Duration(seconds) * time.Second
 
-	err = wakeUpInstance(ctx, u.Username, u.Password, timeout)
+	err = wakeUpInstance(ctx, userDetails.Username, userDetails.Password, timeout)
 
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	log.Printf("Finished")
 }
 
 func wakeUpInstance(ctx context.Context, username string, password string, timeout time.Duration) error {
@@ -167,18 +154,18 @@ func wakeUpInstance(ctx context.Context, username string, password string, timeo
 		fmt.Printf("Login successful!\n")
 	}
 
-	fmt.Printf("Wait button\n")
+    fmt.Printf("Wait button\n")
 
 	var finalRes int
 
 	fmt.Printf("Start find button for wakeup\n")
 	if err := chromedp.Run(ctx, chromedp.WaitVisible(`document.querySelector("dps-app").shadowRoot.querySelector("dps-home-auth").shadowRoot.querySelector("dps-instance-sidebar").shadowRoot.querySelector("dps-button")`, chromedp.ByJSPath)); err != nil {
-		return fmt.Errorf("button was not found: %v", err)
+	    return fmt.Errorf("button was not found: %v", err)
 	}
 
-	fmt.Printf("Start wakeup instance\n")
+    fmt.Printf("Start wakeup instance\n")
 
-	if err := chromedp.Run(ctx, chromedp.EvaluateAsDevTools(`document.querySelector("dps-app").shadowRoot.querySelector("dps-home-auth").shadowRoot.querySelector("dps-instance-sidebar").shadowRoot.querySelector("dps-button").click() === undefined ? 1 : 0`, &finalRes)); err != nil {
+    if err := chromedp.Run(ctx, chromedp.EvaluateAsDevTools(`document.querySelector("dps-app").shadowRoot.querySelector("dps-home-auth").shadowRoot.querySelector("dps-instance-sidebar").shadowRoot.querySelector("dps-button").click() === undefined ? 1 : 0`, &finalRes)); err != nil {
 		return fmt.Errorf("button was not clicked: %v", err)
 	}
 
@@ -187,22 +174,27 @@ func wakeUpInstance(ctx context.Context, username string, password string, timeo
 	return nil
 }
 
-func readConfig(p string) *User {
-	f, err := os.Open(p)
+// Read the config file if required and load the json to the struct
+func readConfig(config string) *User {
+	// Load the specified config file from the path provided
+	jsonFile, err := os.Open(config)
 
 	if err != nil {
 		log.Fatal(err)
 		return nil
 	}
 
-	defer f.Close()
+	defer jsonFile.Close()
 
-	b, _ := ioutil.ReadAll(f)
+	byteValue, _ := ioutil.ReadAll(jsonFile)
 
-	u := User{}
-	if json.Unmarshal(b, &u) != nil {
+	userInfo := User{}
+
+	err = json.Unmarshal(byteValue, &userInfo)
+
+	if err != nil {
 		return nil
 	}
 
-	return &u
+	return &userInfo
 }
